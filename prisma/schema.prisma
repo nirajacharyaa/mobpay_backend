@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(uuid())
+  name           String
+  phone          String     @unique
+  email          String?
+  image          String?
+  hashedPassword String
+  balance        Float      @default(0)
+  createdAt      DateTime   @default(now())
+  isMerchant     Boolean    @default(false)
+  merchants      Merchant[]
+  Payment        Payment[]
+}
+
+model Merchant {
+  id       String    @id @default(uuid())
+  name     String
+  balance  Float     @default(0)
+  User     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String?
+  products Product[]
+  Payment  Payment[]
+}
+
+model Product {
+  id         String    @id @default(uuid())
+  Merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchantId String?
+  name       String
+  price      Float
+  Payment    Payment?  @relation(fields: [paymentId], references: [id])
+  paymentId  String?
+}
+
+model Payment {
+  id         String    @id @default(uuid())
+  token      String    @unique
+  isPaid     Boolean   @default(false)
+  User       User?     @relation(fields: [userId], references: [id])
+  userId     String?
+  Merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  merchantId String?
+  amount     Float
+  createdAt  DateTime  @default(now())
+  products   Product[]
+}
