@@ -8,17 +8,19 @@ datasource db {
 }
 
 model User {
-  id             String     @id @default(uuid())
+  id             String        @id @default(uuid())
   name           String
-  phone          String     @unique
+  phone          String        @unique
   email          String?
   image          String?
   hashedPassword String
-  balance        Float      @default(0)
-  createdAt      DateTime   @default(now())
-  isMerchant     Boolean    @default(false)
+  balance        Float         @default(0)
+  createdAt      DateTime      @default(now())
+  isMerchant     Boolean       @default(false)
   merchants      Merchant[]
   Payment        Payment[]
+  sent           Transaction[] @relation("reciever")
+  recieved       Transaction[] @relation("sender")
 }
 
 model Merchant {
@@ -52,4 +54,15 @@ model Payment {
   amount     Float
   createdAt  DateTime  @default(now())
   products   Product[]
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  sender     User     @relation(fields: [senderId], references: [id], name: "sender")
+  receiver   User     @relation(fields: [recieverId], references: [id], name: "reciever")
+  amount     Float
+  remark     String?
+  createdAt  DateTime @default(now())
+  senderId   String
+  recieverId String
 }

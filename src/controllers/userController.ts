@@ -20,7 +20,6 @@ export const createUser = expressAsyncHandler(
         phone: phone,
         email: email,
         hashedPassword: hashedPassword,
-        isMerchant: true,
       },
     });
     res.send(user);
@@ -46,19 +45,88 @@ export const signInUser = expressAsyncHandler(
             if (err) {
               throw err;
             }
-            res.send({
+            return res.send({
               token,
               user: {
                 id: user.id,
                 name: user.name,
                 phone: user.phone,
-                email: user.email,
               },
             });
           }
         );
       } else {
         res.status(401).send({ message: "Invalid Credentials" });
+      }
+    }
+  }
+);
+
+export const sendMoney = expressAsyncHandler(
+  async (req: Request, res: Response) => {
+    const { amount, receiverPhone, remark } = req.body;
+    const { id: senderId } = jwt.verify(
+      req.headers.authorization as string,
+      process.env.JWT_SECRET as string
+    ) as { id: string };
+    const sender = await prisma.user.findUnique({
+      where: {
+        id: senderId,
+      },
+    });
+    const receiver = await prisma.user.findUnique({
+      where: {
+        phone: receiverPhone,
+      },
+    });
+    if (!receiver) {
+      res.json({ message: "Receiver not found" });
+    }
+    if (sender && receiver) {
+      if (sender.balance < amount) {
+        res.json({ message: "Insufficient Balance" });
+      } else {
+        const updatedSender = await prisma.user.update({
+          where: {
+            id: senderId,
+          },
+          data: {
+            balance: sender.balance - amount,
+          },
+        });
+        const updatedReceiver = await prisma.user.update({
+          where: {
+            phone: receiverPhone,
+          },
+          data: {
+            balance: receiver.balance + amount,
+          },
+        });
+        const transaction = await prisma.transaction?.create({
+          data: {
+            amount: amount,
+            remark: remark,
+            sender: {
+              connect: {
+                id: senderId,
+              },
+            },
+            receiver: {
+              connect: {
+                id: receiver.id,
+              },
+            },
+          },
+        });
+        res.json({
+          message: "Transaction Successful",
+          sender: updatedSender.phone,
+          receiver: {
+            phone: updatedReceiver.phone,
+            name: updatedReceiver.name,
+          },
+          transaction: transaction,
+        });
       }
     }
   }
