@@ -66,7 +66,7 @@ export const sendMoney = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { amount, receiverPhone, remark } = req.body;
     const { id: senderId } = jwt.verify(
-      req.headers.authorization as string,
+      req.headers["x-access-token"] as string,
       process.env.JWT_SECRET as string
     ) as { id: string };
     const sender = await prisma.user.findUnique({

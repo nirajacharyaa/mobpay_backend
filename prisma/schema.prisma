@@ -17,29 +17,31 @@ model User {
   balance        Float         @default(0)
   createdAt      DateTime      @default(now())
   isMerchant     Boolean       @default(false)
-  merchants      Merchant[]
+  merchant       Merchant?     @relation(fields: [merchantId], references: [id])
   Payment        Payment[]
   sent           Transaction[] @relation("reciever")
   recieved       Transaction[] @relation("sender")
+  merchantId     String?
 }
 
 model Merchant {
-  id       String    @id @default(uuid())
-  name     String
-  balance  Float     @default(0)
-  User     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String?
+  id      String @id @default(uuid())
+  name    String
+  balance Float  @default(0)
+
   products Product[]
   Payment  Payment[]
+  User     User[]
 }
 
 model Product {
   id         String    @id @default(uuid())
-  Merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   merchantId String?
   name       String
   price      Float
-  Payment    Payment?  @relation(fields: [paymentId], references: [id])
+  image      String?
+  payment    Payment?  @relation(fields: [paymentId], references: [id])
   paymentId  String?
 }
 
@@ -52,8 +54,8 @@ model Payment {
   Merchant   Merchant? @relation(fields: [merchantId], references: [id])
   merchantId String?
   amount     Float
-  createdAt  DateTime  @default(now())
   products   Product[]
+  createdAt  DateTime  @default(now())
 }
 
 model Transaction {
